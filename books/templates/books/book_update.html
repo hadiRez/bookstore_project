@@ -1,12 +1,12 @@
 {% extends '_base.html' %}
 
-{% block page_title %} ویرایش کتاب {% endblock %}
+{% block page_title %}به روزرسانی کتاب {{ book.title }}{% endblock %}
 
 {% block content %}
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">ایجاد</button>
+        <button type="submit">ذخیره</button>
     </form>
     <br>
     <a href="{% url 'book_list' %}">لیست همه کتاب ها</a>
