@@ -1,12 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views import generic
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required # unit 167
 
 from .models import Book
-from .forms import CommentForm
+from .forms import CommentForm, BookForm
 
 
 class BookListView(generic.ListView):
@@ -45,19 +45,40 @@ def book_detail_view(request, pk):
     })
 
 
-class BookCreateView(LoginRequiredMixin, generic.CreateView):
-    model = Book
-    fields = ['title', 'author', 'description', 'price', 'cover']
+class BookCreateView(generic.CreateView):
+    form_class = BookForm
     template_name = 'books/book_create.html'
 
+    def form_valid(self, form):
+        book = form.save(commit=False)
+        book.user = self.request.user
+        book.save()
+        return redirect(book.get_absolute_url())
 
-class BookUpdateView(LoginRequiredMixin, generic.UpdateView):
+    def post(self, request, *args, **kwargs):
+        print(request.FILES)
+        return super().post(request, *args, **kwargs)
+
+class BookUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.UpdateView):
     model = Book
     fields = ['title', 'author', 'description', 'cover']
     template_name = 'books/book_update.html'
 
+    def post(self, request, *args, **kwargs):
+        print(request.FILES)
+        return super().post(request, *args, **kwargs)
 
-class BookDeleteView(LoginRequiredMixin, generic.DeleteView):
+    # unit 169
+    def test_func(self):
+        obj = self.get_object()
+        return obj.user == self.request.user
+
+
+class BookDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
     model = Book
     template_name = 'books/book_delete.html'
     success_url = reverse_lazy('book_list')
+
+    def test_func(self):
+        obj = self.get_object()
+        return obj.user == self.request.user
